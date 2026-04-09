@@ -1,0 +1,1256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+<meta name="theme-color" content="#0a0906"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black"/>
+<meta name="apple-mobile-web-app-title" content="Verdict"/>
+<link rel="manifest" href="manifest.json"/>
+<link rel="apple-touch-icon" href="icons/icon-192.png"/>
+<title>Verdict — Detective Files</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=Lora:ital,wght@0,400;0,500;1,400&family=Share+Tech+Mono&display=swap" rel="stylesheet"/>
+<style>
+/* ── RESET ───────────────────────────────────────────── */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --ink:#0a0906;--ink2:#141210;--ink3:#1e1a16;--ink4:#252018;
+  --gold:#c8922a;--gold2:#e0a832;--gold3:#f0c060;--gold-dim:#8a6010;
+  --gold-pale:rgba(200,146,42,.1);--gold-bg:rgba(200,146,42,.06);
+  --red:#7a1515;--red2:#aa2222;
+  --teal:#1a7a6a;--teal2:#22aa8a;
+  --paper:#f2e8d2;--paper2:#e8d8b8;
+  --text:#e8dcc8;--text-dim:#a09070;--text-muted:#6a5a40;
+  --border:rgba(200,146,42,.2);--border2:rgba(200,146,42,.08);
+  --r:4px;
+}
+html,body{height:100%;overflow:hidden;background:var(--ink);color:var(--text);font-family:'Lora',Georgia,serif;font-size:16px;line-height:1.65}
+h1,h2,h3{font-family:'Playfair Display',serif}
+
+/* ── SCREENS ─────────────────────────────────────────── */
+.screen{position:fixed;inset:0;display:flex;flex-direction:column;overflow:hidden;background:var(--ink)}
+.screen.hidden{display:none!important}
+
+/* ── SHARED BUTTONS ──────────────────────────────────── */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;cursor:pointer;font-family:'Share Tech Mono',monospace;letter-spacing:.1em;text-transform:uppercase;border-radius:var(--r);border:none;transition:all .18s;user-select:none}
+.btn:active{transform:translateY(1px)!important}
+.btn-gold{background:linear-gradient(135deg,#9a6a18,var(--gold));color:#1a0e00;font-size:.75rem;font-weight:700;padding:12px 30px;box-shadow:0 2px 12px rgba(200,146,42,.3)}
+.btn-gold:hover{background:linear-gradient(135deg,var(--gold),var(--gold2));transform:translateY(-1px);box-shadow:0 6px 20px rgba(200,146,42,.4)}
+.btn-outline{background:transparent;border:1px solid var(--border);color:var(--text-dim);font-size:.68rem;padding:9px 18px}
+.btn-outline:hover{border-color:var(--gold);color:var(--gold);background:var(--gold-bg)}
+.btn-ghost{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);color:var(--text-muted);font-size:.65rem;padding:7px 14px}
+.btn-ghost:hover{background:var(--gold-bg);border-color:var(--border);color:var(--gold)}
+.btn-red{background:var(--red);color:var(--paper);font-size:.75rem;font-weight:700;padding:12px 28px}
+.btn-red:hover{background:var(--red2);transform:translateY(-1px)}
+
+/* ── TOAST ───────────────────────────────────────────── */
+#toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(14px);background:var(--ink3);border:1px solid var(--gold);color:var(--gold);padding:8px 20px;font-family:'Share Tech Mono',monospace;font-size:.68rem;letter-spacing:.1em;border-radius:var(--r);z-index:9999;opacity:0;pointer-events:none;transition:all .3s;white-space:nowrap}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* ── CREDIT ──────────────────────────────────────────── */
+.credit{font-family:'Share Tech Mono',monospace;font-size:.62rem;color:var(--text-muted);letter-spacing:.08em;text-align:center;margin-top:20px}
+.credit a{color:var(--gold);text-decoration:none;border-bottom:1px solid rgba(200,146,42,.3);transition:color .2s}
+.credit a:hover{color:var(--gold2)}
+
+/* ═══════════════════════════════════════════════════════
+   MENU
+═══════════════════════════════════════════════════════ */
+#s-menu{align-items:center;justify-content:center}
+.menu-grain{position:absolute;inset:0;pointer-events:none;z-index:0;opacity:.35;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='0.045'/%3E%3C/svg%3E")}
+.menu-lines{position:absolute;inset:0;pointer-events:none;z-index:0;background-image:repeating-linear-gradient(0deg,transparent,transparent 54px,rgba(200,146,42,.025) 54px,rgba(200,146,42,.025) 55px)}
+.menu-c{position:absolute;width:80px;height:80px;pointer-events:none;z-index:1}
+.menu-c.tl{top:20px;left:20px;border-top:1px solid var(--border);border-left:1px solid var(--border)}
+.menu-c.tr{top:20px;right:20px;border-top:1px solid var(--border);border-right:1px solid var(--border)}
+.menu-c.bl{bottom:20px;left:20px;border-bottom:1px solid var(--border);border-left:1px solid var(--border)}
+.menu-c.br{bottom:20px;right:20px;border-bottom:1px solid var(--border);border-right:1px solid var(--border)}
+.menu-inner{position:relative;z-index:2;text-align:center;padding:40px 24px;display:flex;flex-direction:column;align-items:center;max-width:520px;width:100%}
+.menu-eye{font-family:'Share Tech Mono',monospace;font-size:.62rem;letter-spacing:.42em;color:var(--gold);opacity:.6;text-transform:uppercase;margin-bottom:14px}
+.menu-title{font-family:'Playfair Display',serif;font-size:clamp(4.2rem,15vw,8rem);font-weight:900;color:var(--paper);line-height:.92;letter-spacing:-.01em;text-shadow:0 0 90px rgba(200,146,42,.18);margin-bottom:8px}
+.menu-subtitle{font-family:'Playfair Display',serif;font-size:.9rem;font-style:italic;color:var(--text-dim);letter-spacing:.08em;margin-bottom:28px}
+.menu-rule{width:260px;height:1px;background:linear-gradient(90deg,transparent,var(--gold),transparent);margin:0 auto 28px}
+.menu-actions{display:flex;flex-direction:column;align-items:center;gap:9px;width:100%;max-width:240px;margin-bottom:32px}
+.menu-actions .btn{width:100%}
+.menu-keys{display:flex;flex-wrap:wrap;justify-content:center;gap:12px;margin-bottom:8px;font-size:.72rem;color:var(--text-muted)}
+.menu-keys span{display:flex;align-items:center;gap:5px}
+kbd{background:var(--ink3);border:1px solid var(--border);border-radius:3px;padding:2px 6px;font-family:'Share Tech Mono',monospace;font-size:.73em;color:var(--gold)}
+
+/* ═══════════════════════════════════════════════════════
+   BRIEFING
+═══════════════════════════════════════════════════════ */
+#s-brief{background:var(--paper);color:#1a1208}
+.brief-bar{background:var(--ink);flex-shrink:0;display:flex;align-items:center;justify-content:space-between;padding:13px 26px;border-bottom:2px solid var(--gold)}
+.brief-badge{font-family:'Share Tech Mono',monospace;font-size:.6rem;letter-spacing:.32em;color:var(--gold);text-transform:uppercase}
+.brief-case-nm{font-family:'Playfair Display',serif;font-size:1rem;font-style:italic;color:var(--paper)}
+.brief-body{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;display:grid;grid-template-columns:1fr 1fr}
+.brief-col{padding:24px 28px;border-right:1px solid rgba(0,0,0,.1)}
+.brief-col:last-child{border-right:none}
+.b-sec-lbl{font-family:'Share Tech Mono',monospace;font-size:.58rem;letter-spacing:.26em;color:var(--gold-dim);text-transform:uppercase;margin-bottom:12px;padding-bottom:6px;border-bottom:1px solid rgba(0,0,0,.1);margin-top:18px}
+.b-sec-lbl:first-child{margin-top:0}
+.b-row{display:flex;gap:10px;align-items:baseline;padding:5px 0;border-bottom:1px solid rgba(0,0,0,.06);font-size:.86rem}
+.b-lbl{font-family:'Share Tech Mono',monospace;font-size:.58rem;letter-spacing:.1em;color:var(--text-muted);text-transform:uppercase;flex-shrink:0;width:80px}
+.b-val{color:#1a1208}
+.b-summary{font-size:.9rem;line-height:1.75;color:#3a2a10;font-style:italic;margin-top:6px}
+.tl-list{list-style:none;display:flex;flex-direction:column}
+.tl-item{display:flex;gap:12px;align-items:baseline;padding:6px 0;border-bottom:1px solid rgba(0,0,0,.06);font-size:.84rem}
+.tl-time{font-family:'Share Tech Mono',monospace;font-size:.62rem;color:var(--gold-dim);flex-shrink:0;width:60px}
+.tl-ev{color:#2a1a08}
+.brief-foot{flex-shrink:0;background:var(--ink);border-top:1px solid rgba(200,146,42,.15);padding:14px 26px;display:flex;align-items:center;justify-content:flex-end;gap:10px}
+
+/* ═══════════════════════════════════════════════════════
+   SUSPECT SELECT
+═══════════════════════════════════════════════════════ */
+#s-select{background:var(--ink)}
+.sel-bar{flex-shrink:0;display:flex;align-items:center;justify-content:space-between;padding:12px 24px;background:rgba(0,0,0,.4);border-bottom:1px solid var(--border)}
+.sel-title{font-family:'Playfair Display',serif;font-size:1.1rem;font-style:italic;color:var(--paper)}
+.sel-status{font-family:'Share Tech Mono',monospace;font-size:.62rem;color:var(--gold);letter-spacing:.1em;opacity:.7}
+.suspect-grid{flex:1;display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:rgba(200,146,42,.06);min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.sc{background:var(--ink2);cursor:pointer;display:flex;flex-direction:column;transition:background .18s;position:relative;overflow:hidden}
+.sc:hover{background:rgba(200,146,42,.05)}
+.sc.done{opacity:.72}
+.sc-img{width:100%;position:relative;overflow:hidden;background:#060402;flex-shrink:0}
+.sc-img img{width:100%;display:block;aspect-ratio:2/3;object-fit:cover;object-position:top center;transition:transform .3s}
+.sc:hover .sc-img img{transform:scale(1.03)}
+.sc-img::after{content:'';position:absolute;inset:0;background:linear-gradient(to top,rgba(10,9,6,.75) 0%,transparent 55%);pointer-events:none}
+.sc-body{padding:12px 14px;flex:1;display:flex;flex-direction:column;gap:3px}
+.sc-name{font-family:'Playfair Display',serif;font-size:.95rem;color:var(--paper)}
+.sc-role{font-family:'Share Tech Mono',monospace;font-size:.58rem;color:var(--gold);letter-spacing:.1em;text-transform:uppercase}
+.sc-rel{font-size:.77rem;color:var(--text-dim);font-style:italic;line-height:1.4;margin-top:2px}
+.sc-tag{display:inline-block;margin-top:6px;font-family:'Share Tech Mono',monospace;font-size:.57rem;letter-spacing:.07em;padding:3px 8px;border-radius:2px}
+.sc-tag.t-new{background:rgba(200,146,42,.1);color:var(--gold);border:1px solid rgba(200,146,42,.2)}
+.sc-tag.t-done{background:rgba(26,122,106,.15);color:var(--teal2);border:1px solid rgba(26,122,106,.25)}
+.sel-foot{flex-shrink:0;display:flex;align-items:center;justify-content:space-between;padding:12px 24px;background:rgba(0,0,0,.35);border-top:1px solid var(--border2);gap:10px;flex-wrap:wrap}
+.sel-hint{font-family:'Share Tech Mono',monospace;font-size:.6rem;color:var(--text-muted);letter-spacing:.08em}
+
+/* ═══════════════════════════════════════════════════════
+   INTERROGATION
+═══════════════════════════════════════════════════════ */
+#s-game{background:var(--ink)}
+.hud{flex-shrink:0;display:flex;align-items:stretch;background:rgba(0,0,0,.55);border-bottom:1px solid var(--border2)}
+.hud-info{padding:8px 18px;flex:1;display:flex;flex-direction:column;justify-content:center;gap:1px;border-right:1px solid var(--border2)}
+.hud-lbl{font-family:'Share Tech Mono',monospace;font-size:.5rem;letter-spacing:.25em;color:var(--gold);opacity:.55;text-transform:uppercase}
+.hud-name{font-family:'Playfair Display',serif;font-size:.92rem;color:var(--paper);font-style:italic}
+.hud-role{font-size:.65rem;color:var(--text-muted);font-style:italic}
+.hud-stats{display:flex;align-items:stretch}
+.hud-stat{padding:6px 14px;text-align:center;border-right:1px solid var(--border2);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;min-width:50px}
+.hud-stat-n{font-family:'Playfair Display',serif;font-size:1.05rem;color:var(--gold);line-height:1}
+.hud-stat-l{font-family:'Share Tech Mono',monospace;font-size:.46rem;letter-spacing:.15em;color:var(--text-muted);text-transform:uppercase}
+.hud-btns{display:flex;align-items:stretch}
+.hud-btn{padding:0 13px;background:transparent;border:none;border-right:1px solid var(--border2);cursor:pointer;color:var(--text-dim);font-family:'Share Tech Mono',monospace;font-size:.56rem;letter-spacing:.1em;text-transform:uppercase;transition:all .18s;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-width:62px}
+.hud-btn span.ico{font-size:.95rem}
+.hud-btn:hover{background:var(--gold-bg);color:var(--gold)}
+.hud-btn:last-child{border-right:none}
+/* interrogation layout */
+.interrog{flex:1;display:flex;min-height:0}
+.portrait-side{width:36%;flex-shrink:0;position:relative;overflow:hidden;background:#060402}
+#portrait{width:100%;height:100%;object-fit:cover;object-position:top center;transition:opacity .2s;display:block}
+.portrait-vig{position:absolute;inset:0;pointer-events:none;background:linear-gradient(to right,transparent 52%,rgba(10,9,6,.88) 100%),linear-gradient(to top,rgba(10,9,6,.65) 0%,transparent 28%)}
+.portrait-foot{position:absolute;bottom:0;left:0;right:0;padding:16px 14px 11px;background:linear-gradient(to top,rgba(10,9,6,.96) 0%,transparent 100%)}
+.portrait-char{font-family:'Playfair Display',serif;font-size:1.1rem;font-style:italic;color:var(--paper);display:block;line-height:1.1}
+.portrait-role{font-family:'Share Tech Mono',monospace;font-size:.54rem;color:var(--gold);letter-spacing:.16em;text-transform:uppercase;display:block;margin-top:4px}
+/* dialogue side */
+.dlg-side{flex:1;display:flex;flex-direction:column;min-width:0}
+.dlg-head{flex-shrink:0;padding:12px 22px 0;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border2);padding-bottom:12px}
+.dlg-speaker{font-family:'Playfair Display',serif;font-size:.9rem;font-style:italic;color:var(--gold2)}
+.dlg-mood{font-family:'Share Tech Mono',monospace;font-size:.5rem;letter-spacing:.1em;background:var(--gold-bg);border:1px solid var(--border);color:var(--gold);padding:2px 7px;border-radius:2px;text-transform:uppercase}
+.dlg-body{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:16px 22px 8px;cursor:pointer;display:flex;flex-direction:column}
+.dlg-text{font-size:1rem;line-height:1.85;color:var(--text);min-height:60px;flex:1}
+.dlg-caret{display:inline-block;width:2px;height:1em;background:var(--gold);vertical-align:middle;margin-left:2px;animation:blink .75s step-end infinite}
+.dlg-caret.off{display:none}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+.dlg-hint{font-family:'Share Tech Mono',monospace;font-size:.56rem;color:var(--gold);letter-spacing:.2em;text-transform:uppercase;margin-top:10px;opacity:0;transition:opacity .3s;animation:softpulse 1.6s ease-in-out infinite}
+.dlg-hint.on{opacity:.6}
+@keyframes softpulse{0%,100%{opacity:.6}50%{opacity:.3}}
+/* choices */
+.choices{flex-shrink:0;border-top:1px solid var(--border2);display:flex;flex-direction:column;gap:5px;padding:10px 20px 12px;background:rgba(0,0,0,.25);overflow-y:auto;-webkit-overflow-scrolling:touch;max-height:48%}
+.choices.off{display:none}
+.ch-btn{background:rgba(255,255,255,.03);border:1px solid var(--border2);border-radius:var(--r);padding:9px 15px;cursor:pointer;color:var(--text);font-family:'Lora',serif;font-size:.88rem;text-align:left;transition:all .18s;line-height:1.4;display:flex;align-items:center;gap:9px}
+.ch-btn::before{content:'›';color:var(--gold);font-size:1.1rem;opacity:0;flex-shrink:0;transition:opacity .15s}
+.ch-btn:hover:not(:disabled){background:var(--gold-bg);border-color:var(--gold);color:var(--paper)}
+.ch-btn:hover:not(:disabled)::before{opacity:1}
+.ch-btn:disabled,.ch-btn.asked{opacity:.25;cursor:not-allowed;pointer-events:none}
+.ch-end{border-color:rgba(120,30,30,.22)!important;color:var(--text-muted)!important;font-style:italic;font-size:.82rem!important}
+.ch-end:hover{background:rgba(120,30,30,.08)!important;border-color:rgba(160,40,40,.45)!important;color:rgba(240,220,200,.6)!important}
+/* new clue flash */
+.ev-flash{margin:8px 0 0;background:rgba(200,146,42,.07);border:1px solid var(--border);border-left:3px solid var(--gold);border-radius:var(--r);padding:7px 12px;font-family:'Share Tech Mono',monospace;font-size:.64rem;letter-spacing:.08em;color:var(--gold2);opacity:0;transition:opacity .4s}
+.ev-flash.on{opacity:1}
+
+/* ═══════════════════════════════════════════════════════
+   VERDICT
+═══════════════════════════════════════════════════════ */
+#s-verdict{align-items:center;justify-content:center;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.verdict-wrap{max-width:580px;width:100%;padding:52px 28px;text-align:center;display:flex;flex-direction:column;align-items:center}
+.v-eye{font-family:'Share Tech Mono',monospace;font-size:.58rem;letter-spacing:.36em;color:var(--gold);opacity:.55;text-transform:uppercase;margin-bottom:12px}
+.v-head{font-family:'Playfair Display',serif;font-size:2.6rem;font-style:italic;margin-bottom:5px}
+.v-correct{color:var(--teal2)}.v-wrong{color:var(--red2)}
+.v-rule{width:100px;height:1px;background:linear-gradient(90deg,transparent,var(--gold),transparent);margin:16px auto 18px}
+.v-suspect{font-family:'Playfair Display',serif;font-size:1.35rem;color:var(--paper);margin-bottom:14px}
+.v-exp{font-size:.9rem;line-height:1.85;color:var(--text-dim);font-style:italic;max-width:470px;margin-bottom:28px;text-align:center}
+.v-stats{display:flex;gap:28px;margin-bottom:30px;flex-wrap:wrap;justify-content:center}
+.vstat{display:flex;flex-direction:column;align-items:center;gap:3px}
+.vstat-n{font-family:'Playfair Display',serif;font-size:2rem;color:var(--gold);line-height:1}
+.vstat-l{font-family:'Share Tech Mono',monospace;font-size:.54rem;color:var(--text-muted);letter-spacing:.14em;text-transform:uppercase}
+.v-retry{display:none;margin-bottom:14px;padding:12px 18px;background:var(--ink3);border:1px solid var(--border);border-radius:var(--r);font-size:.82rem;color:var(--text-muted);font-style:italic}
+.v-actions{display:flex;gap:9px;flex-wrap:wrap;justify-content:center;margin-bottom:6px}
+
+/* ═══════════════════════════════════════════════════════
+   MODALS
+═══════════════════════════════════════════════════════ */
+.overlay{position:fixed;inset:0;z-index:800;background:rgba(5,4,3,.88);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;padding:14px;opacity:0;pointer-events:none;transition:opacity .22s}
+.overlay.open{opacity:1;pointer-events:all}
+.mbox{background:var(--paper);border-radius:var(--r);width:100%;max-height:90dvh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 24px 80px rgba(0,0,0,.75),0 0 0 1px rgba(200,146,42,.22)}
+.mbox-cf{max-width:840px}.mbox-nb{max-width:560px}.mbox-acc{max-width:640px}.mbox-install{max-width:460px}
+.m-head{background:var(--ink);flex-shrink:0;display:flex;align-items:center;justify-content:space-between;padding:12px 20px;border-bottom:2px solid var(--gold)}
+.m-head-title{font-family:'Playfair Display',serif;font-size:.9rem;font-style:italic;color:var(--paper);letter-spacing:.03em}
+.m-close{background:none;border:none;cursor:pointer;color:rgba(255,255,255,.3);font-size:1rem;padding:3px 8px;line-height:1;transition:color .2s}
+.m-close:hover{color:var(--paper)}
+.m-body{overflow-y:auto;-webkit-overflow-scrolling:touch;flex:1;padding:18px 22px;color:#1a1208}
+
+/* Case file */
+.cf-victim-row{display:flex;gap:16px;align-items:flex-start;margin-bottom:18px;padding-bottom:16px;border-bottom:1px solid rgba(0,0,0,.1)}
+.cf-vic-img{width:84px;height:108px;object-fit:cover;object-position:top;border-radius:var(--r);flex-shrink:0;border:2px solid rgba(0,0,0,.15)}
+.cf-vic-name{font-family:'Playfair Display',serif;font-size:1.15rem;margin-bottom:8px}
+.cf-field{display:flex;gap:8px;align-items:baseline;padding:4px 0;border-bottom:1px solid rgba(0,0,0,.05);font-size:.82rem}
+.cf-field:last-child{border:none}
+.cf-lbl{font-family:'Share Tech Mono',monospace;font-size:.56rem;letter-spacing:.1em;color:var(--text-muted);text-transform:uppercase;flex-shrink:0;width:82px}
+.cf-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.cf-sec{font-family:'Share Tech Mono',monospace;font-size:.55rem;letter-spacing:.24em;color:var(--gold-dim);text-transform:uppercase;margin-bottom:8px;padding-bottom:5px;border-bottom:1px solid rgba(0,0,0,.1)}
+.cf-sus-item{padding:6px 0;border-bottom:1px solid rgba(0,0,0,.06);font-size:.8rem;display:flex;flex-direction:column;gap:2px}
+.cf-sus-name{font-weight:700;font-size:.86rem}
+.cf-sus-role{font-family:'Share Tech Mono',monospace;font-size:.56rem;color:var(--gold-dim);letter-spacing:.08em;text-transform:uppercase}
+.cf-sus-done{font-family:'Share Tech Mono',monospace;font-size:.56rem;color:var(--teal);letter-spacing:.06em}
+.clue-item{display:flex;gap:7px;align-items:flex-start;padding:5px 0;border-bottom:1px solid rgba(0,0,0,.06);font-size:.82rem;line-height:1.5}
+.clue-dot{color:var(--gold-dim);flex-shrink:0;margin-top:3px;font-size:.7rem}
+.empty-st{font-size:.82rem;color:var(--text-muted);font-style:italic}
+
+/* Notebook */
+.nb-tabs{display:flex;background:var(--ink);flex-shrink:0;border-bottom:1px solid rgba(200,146,42,.12)}
+.nb-tab{flex:1;padding:10px;background:none;border:none;cursor:pointer;font-family:'Share Tech Mono',monospace;font-size:.62rem;letter-spacing:.12em;color:rgba(240,232,200,.3);text-transform:uppercase;transition:all .18s;position:relative}
+.nb-tab::after{content:'';position:absolute;bottom:0;left:25%;right:25%;height:2px;background:var(--gold);transform:scaleX(0);transition:transform .2s}
+.nb-tab:hover{color:rgba(240,232,200,.6)}
+.nb-tab.active{color:var(--gold)}
+.nb-tab.active::after{transform:scaleX(1)}
+.nb-panel{min-height:180px;display:none}
+.nb-panel.active{display:block}
+.nb-ev-item{display:flex;gap:7px;align-items:flex-start;padding:6px 0;border-bottom:1px solid rgba(0,0,0,.07);font-size:.82rem;line-height:1.5;color:#1a1208}
+.nb-note{padding:9px 0;border-bottom:1px solid rgba(0,0,0,.07)}
+.nb-note-time{font-family:'Share Tech Mono',monospace;font-size:.58rem;color:var(--text-muted);letter-spacing:.08em;margin-bottom:3px}
+.nb-note-body{font-size:.84rem;color:#1a1208;line-height:1.6}
+.nb-write{display:flex;flex-direction:column;gap:8px;padding-top:12px;border-top:1px solid rgba(0,0,0,.1);margin-top:10px}
+#note-ta{width:100%;min-height:100px;background:rgba(0,0,0,.04);border:1px solid rgba(0,0,0,.15);border-radius:var(--r);padding:11px;font-family:'Lora',serif;font-size:.88rem;color:#1a1208;resize:vertical;outline:none;transition:border-color .2s}
+#note-ta:focus{border-color:var(--gold-dim)}
+#note-ta::placeholder{color:var(--text-muted)}
+
+/* Accusation */
+.acc-warn{font-family:'Playfair Display',serif;font-size:.9rem;font-style:italic;color:var(--red2);text-align:center;padding:14px 20px;border-bottom:1px solid rgba(0,0,0,.1);background:rgba(120,30,30,.04)}
+.acc-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:rgba(0,0,0,.12)}
+.acc-card{background:var(--paper2);display:flex;flex-direction:column;align-items:center;padding:14px 10px;gap:6px;text-align:center}
+.acc-card img{width:74px;height:96px;object-fit:cover;object-position:top;border-radius:var(--r);border:2px solid rgba(0,0,0,.15)}
+.acc-name{font-family:'Playfair Display',serif;font-size:.86rem;font-weight:700;color:#1a1208}
+.acc-role{font-size:.72rem;color:var(--text-muted);font-style:italic}
+.acc-btn{background:var(--red);color:var(--paper);border:none;border-radius:var(--r);padding:6px 14px;font-family:'Share Tech Mono',monospace;font-size:.6rem;letter-spacing:.08em;cursor:pointer;transition:background .18s;text-transform:uppercase}
+.acc-btn:hover{background:var(--red2)}
+
+/* ── INSTALL MODAL ────────────────────────────────────── */
+.inst-body{background:var(--ink);color:var(--text);padding:0}
+.inst-intro{padding:16px 22px;font-size:.88rem;color:var(--text-dim);font-style:italic;border-bottom:1px solid var(--border2);line-height:1.6;text-align:center}
+.inst-platform{padding:18px 22px;display:none}
+.inst-platform.active{display:block}
+.inst-platform-header{display:flex;align-items:center;gap:14px;margin-bottom:16px}
+.inst-icon{font-size:2rem}
+.inst-platform-title{font-family:'Playfair Display',serif;font-size:1rem;color:var(--paper)}
+.inst-platform-sub{font-size:.78rem;color:var(--text-dim);margin-top:2px}
+.inst-btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;background:linear-gradient(135deg,var(--teal),var(--teal2));color:#fff;border:none;border-radius:var(--r);padding:13px;font-family:'Share Tech Mono',monospace;font-size:.72rem;letter-spacing:.1em;text-transform:uppercase;cursor:pointer;transition:all .2s;margin-bottom:10px}
+.inst-btn:hover{filter:brightness(1.1);transform:translateY(-1px)}
+.inst-btn:disabled{opacity:.45;cursor:not-allowed;transform:none}
+.inst-note{font-size:.75rem;color:var(--text-muted);font-style:italic;text-align:center}
+.ios-steps{display:flex;flex-direction:column;gap:10px}
+.ios-step{display:flex;gap:12px;align-items:flex-start}
+.ios-step-num{width:28px;height:28px;border-radius:50%;background:var(--gold);color:#1a0e00;font-family:'Share Tech Mono',monospace;font-size:.68rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px}
+.ios-step-body strong{display:block;font-size:.88rem;color:var(--text);margin-bottom:2px}
+.ios-step-body span{font-size:.78rem;color:var(--text-muted)}
+.ios-step-body kbd{background:var(--ink3);border:1px solid var(--border);border-radius:3px;padding:1px 6px;font-family:'Share Tech Mono',monospace;font-size:.72em;color:var(--gold2)}
+.inst-already{text-align:center;padding:8px}
+.inst-already-icon{font-size:2.5rem;margin-bottom:8px}
+.inst-already-text{font-family:'Playfair Display',serif;font-size:1rem;color:var(--teal2)}
+
+/* ═══════════════════════════════════════════════════════
+   RESPONSIVE
+═══════════════════════════════════════════════════════ */
+@media(max-width:860px){
+  .brief-body{grid-template-columns:1fr}
+  .brief-col{border-right:none;border-bottom:1px solid rgba(0,0,0,.1)}
+  .cf-grid{grid-template-columns:1fr}
+  .suspect-grid{grid-template-columns:repeat(2,1fr)}
+  .acc-grid{grid-template-columns:repeat(2,1fr)}
+  .portrait-side{width:40%}
+}
+@media(max-width:560px){
+  .portrait-side{display:none}
+  .suspect-grid{grid-template-columns:1fr 1fr}
+  .hud-stats{display:none}
+  .hud-btn{min-width:52px;padding:0 10px;font-size:.52rem}
+  .dlg-body{padding:13px 16px 8px}
+  .choices{padding:8px 14px 10px}
+  .menu-title{font-size:4rem}
+  .v-stats{gap:18px}
+  .acc-grid{grid-template-columns:repeat(2,1fr)}
+}
+</style>
+</head>
+<body>
+
+<!-- ═══════════════ MENU ═════════════════════════════ -->
+<div id="s-menu" class="screen">
+  <div class="menu-grain"></div>
+  <div class="menu-lines"></div>
+  <div class="menu-c tl"></div><div class="menu-c tr"></div>
+  <div class="menu-c bl"></div><div class="menu-c br"></div>
+  <div class="menu-inner">
+    <div class="menu-eye">Detective Files · Case 01</div>
+    <h1 class="menu-title">VERDICT</h1>
+    <p class="menu-subtitle">A Murder Investigation</p>
+    <div class="menu-rule"></div>
+    <div class="menu-actions">
+      <button id="btn-start" class="btn btn-gold">Open Case File</button>
+      <button id="btn-install-open" class="btn btn-outline">Install App</button>
+    </div>
+    <div class="menu-keys">
+      <span><kbd>C</kbd> Case file</span>
+      <span><kbd>N</kbd> Notebook</span>
+      <span><kbd>Space</kbd> Advance</span>
+      <span><kbd>Esc</kbd> Close</span>
+    </div>
+    <div class="credit">Made by <a href="https://aarav-cc.netlify.app/" target="_blank" rel="noopener">Aarav</a></div>
+  </div>
+</div>
+
+<!-- ═══════════════ BRIEFING ═════════════════════════ -->
+<div id="s-brief" class="screen hidden">
+  <div class="brief-bar">
+    <span class="brief-badge">Case #01</span>
+    <span class="brief-case-nm">The Last Order — Silver Spoon Diner</span>
+    <button id="btn-brief-back" class="btn btn-ghost">← Back</button>
+  </div>
+  <div class="brief-body">
+    <div class="brief-col">
+      <div class="b-sec-lbl">Victim</div>
+      <div class="b-row"><span class="b-lbl">Name</span><span class="b-val">Marcus Hale</span></div>
+      <div class="b-row"><span class="b-lbl">Age</span><span class="b-val">42</span></div>
+      <div class="b-row"><span class="b-lbl">Occupation</span><span class="b-val">Diner Owner</span></div>
+      <div class="b-row"><span class="b-lbl">Time of Death</span><span class="b-val">1:40 AM – 2:30 AM</span></div>
+      <div class="b-row"><span class="b-lbl">Location</span><span class="b-val">Back Office, Silver Spoon Diner</span></div>
+      <div class="b-row"><span class="b-lbl">Cause</span><span class="b-val">Blunt force trauma to the skull</span></div>
+      <div class="b-row"><span class="b-lbl">Weapon</span><span class="b-val">Brass paperweight, recovered at scene</span></div>
+      <div class="b-sec-lbl">Summary</div>
+      <p class="b-summary">Marcus Hale was found dead in his back office at 2:30 AM by the cleaning crew. The security system had been manually disabled at 1:40 AM. He had outstanding debts, a bitter ex, and at least three people on the premises that night. Someone in that building killed him.</p>
+    </div>
+    <div class="brief-col">
+      <div class="b-sec-lbl">Timeline of Events</div>
+      <ol class="tl-list">
+        <li class="tl-item"><span class="tl-time">11:00 PM</span><span class="tl-ev">Diner closes to the public</span></li>
+        <li class="tl-item"><span class="tl-time">11:30 PM</span><span class="tl-ev">Evan Stone seen arguing with Marcus</span></li>
+        <li class="tl-item"><span class="tl-time">12:00 AM</span><span class="tl-ev">Arthur Finch makes delivery — meets privately with Marcus in his office</span></li>
+        <li class="tl-item"><span class="tl-time">12:30 AM</span><span class="tl-ev">Lena Brooks arrives for the night shift</span></li>
+        <li class="tl-item"><span class="tl-time">1:00 AM</span><span class="tl-ev">Phil Davis arrives for the night shift</span></li>
+        <li class="tl-item"><span class="tl-time">1:30 AM</span><span class="tl-ev">Phil and Marcus argue — Phil storms out</span></li>
+        <li class="tl-item"><span class="tl-time">1:40 AM</span><span class="tl-ev">Security camera system goes offline (manually disabled)</span></li>
+        <li class="tl-item"><span class="tl-time">2:00 AM</span><span class="tl-ev">Estimated time of death</span></li>
+        <li class="tl-item"><span class="tl-time">2:30 AM</span><span class="tl-ev">Body discovered by cleaning crew</span></li>
+      </ol>
+    </div>
+  </div>
+  <div class="brief-foot">
+    <button id="btn-brief-go" class="btn btn-gold">Begin Investigation →</button>
+  </div>
+</div>
+
+<!-- ═══════════════ SUSPECT SELECT ════════════════════ -->
+<div id="s-select" class="screen hidden">
+  <div class="sel-bar">
+    <span class="sel-title">Persons of Interest</span>
+    <span class="sel-status" id="sel-status">0 / 4 interviewed · 0 clues</span>
+  </div>
+  <div class="suspect-grid" id="suspect-grid"></div>
+  <div class="sel-foot">
+    <span class="sel-hint">Select a suspect to begin interrogation</span>
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+      <button id="btn-sel-cf" class="btn btn-outline">Case File</button>
+      <button id="btn-sel-menu" class="btn btn-ghost">Menu</button>
+      <button id="btn-sel-accuse" class="btn btn-red hidden" style="display:none">Make Accusation ⚖</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════ INTERROGATION ═════════════════════ -->
+<div id="s-game" class="screen hidden">
+  <div class="hud">
+    <div class="hud-info">
+      <span class="hud-lbl">Interrogating</span>
+      <span class="hud-name" id="hud-name">—</span>
+      <span class="hud-role" id="hud-role">—</span>
+    </div>
+    <div class="hud-stats">
+      <div class="hud-stat"><span class="hud-stat-n" id="hud-clues">0</span><span class="hud-stat-l">Clues</span></div>
+      <div class="hud-stat"><span class="hud-stat-n" id="hud-done">0/4</span><span class="hud-stat-l">Done</span></div>
+    </div>
+    <div class="hud-btns">
+      <button class="hud-btn" id="hud-cf"><span class="ico">📁</span>Case File</button>
+      <button class="hud-btn" id="hud-nb"><span class="ico">📓</span>Notebook</button>
+      <button class="hud-btn" id="hud-sw"><span class="ico">⇄</span>Switch</button>
+    </div>
+  </div>
+  <div class="interrog">
+    <div class="portrait-side" id="portrait-side">
+      <img id="portrait" src="" alt="Suspect"/>
+      <div class="portrait-vig"></div>
+      <div class="portrait-foot">
+        <span class="portrait-char" id="p-name">—</span>
+        <span class="portrait-role" id="p-role">—</span>
+      </div>
+    </div>
+    <div class="dlg-side">
+      <div class="dlg-head">
+        <span class="dlg-speaker" id="dlg-spk">—</span>
+        <span class="dlg-mood" id="dlg-mood"></span>
+      </div>
+      <div class="dlg-body" id="dlg-body">
+        <p class="dlg-text" id="dlg-text"></p>
+        <span class="dlg-caret off" id="dlg-caret"></span>
+        <div class="ev-flash" id="ev-flash">◆ New clue recorded</div>
+        <div class="dlg-hint" id="dlg-hint">click or press space to continue ›</div>
+      </div>
+      <div class="choices off" id="choices"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════ VERDICT ═══════════════════════════ -->
+<div id="s-verdict" class="screen hidden">
+  <div class="verdict-wrap">
+    <div class="v-eye">Case #01 — The Last Order</div>
+    <h2 class="v-head" id="v-head">Verdict</h2>
+    <div class="v-rule"></div>
+    <div class="v-suspect" id="v-suspect"></div>
+    <p class="v-exp" id="v-exp"></p>
+    <div class="v-stats">
+      <div class="vstat"><span class="vstat-n" id="v-i">0</span><span class="vstat-l">Interviewed</span></div>
+      <div class="vstat"><span class="vstat-n" id="v-c">0</span><span class="vstat-l">Clues</span></div>
+      <div class="vstat"><span class="vstat-n" id="v-n">0</span><span class="vstat-l">Notes</span></div>
+    </div>
+    <div class="v-retry" id="v-retry">You can keep investigating — return to the suspect list to gather more evidence before making your final accusation.</div>
+    <div class="v-actions">
+      <button id="btn-v-back" class="btn btn-outline" style="display:none">Return to Investigation</button>
+      <button id="btn-v-menu" class="btn btn-gold">Back to Menu</button>
+    </div>
+    <div class="credit">Made by <a href="https://aarav-cc.netlify.app/" target="_blank" rel="noopener">Aarav</a></div>
+  </div>
+</div>
+
+<!-- ═══════════════ MODAL: CASE FILE ═════════════════ -->
+<div id="m-cf" class="overlay">
+  <div class="mbox mbox-cf">
+    <div class="m-head">
+      <span class="m-head-title">Case File — The Last Order</span>
+      <button class="m-close" data-close="m-cf">✕</button>
+    </div>
+    <div class="m-body">
+      <div class="cf-victim-row">
+        <img class="cf-vic-img" src="images/cases/marcus.png" alt="Marcus Hale" onerror="this.style.display='none'"/>
+        <div>
+          <div class="cf-vic-name">Marcus Hale</div>
+          <div class="cf-field"><span class="cf-lbl">Age</span><span>42</span></div>
+          <div class="cf-field"><span class="cf-lbl">Occupation</span><span>Diner Owner</span></div>
+          <div class="cf-field"><span class="cf-lbl">Time of Death</span><span>1:40 – 2:30 AM</span></div>
+          <div class="cf-field"><span class="cf-lbl">Location</span><span>Back Office, Silver Spoon Diner</span></div>
+          <div class="cf-field"><span class="cf-lbl">Cause</span><span>Blunt force trauma</span></div>
+          <div class="cf-field"><span class="cf-lbl">Weapon</span><span>Brass paperweight</span></div>
+        </div>
+      </div>
+      <div class="cf-grid">
+        <div>
+          <div class="cf-sec">Suspects</div>
+          <div id="cf-sus"></div>
+          <div class="cf-sec" style="margin-top:14px">Key Clues (<span id="cf-clue-n">0</span>)</div>
+          <div id="cf-clues"></div>
+        </div>
+        <div>
+          <div class="cf-sec">Timeline</div>
+          <ol class="tl-list" id="cf-tl"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════ MODAL: NOTEBOOK ══════════════════ -->
+<div id="m-nb" class="overlay">
+  <div class="mbox mbox-nb">
+    <div class="m-head">
+      <span class="m-head-title">Detective's Notebook</span>
+      <button class="m-close" data-close="m-nb">✕</button>
+    </div>
+    <div class="nb-tabs">
+      <button class="nb-tab active" data-tab="evidence">Evidence (<span id="nb-ec">0</span>)</button>
+      <button class="nb-tab" data-tab="notes">Notes (<span id="nb-nc">0</span>)</button>
+      <button class="nb-tab" data-tab="timeline">Timeline</button>
+    </div>
+    <div class="m-body">
+      <div class="nb-panel active" id="nb-evidence"></div>
+      <div class="nb-panel" id="nb-notes">
+        <div id="nb-notes-list"></div>
+        <div class="nb-write">
+          <textarea id="note-ta" placeholder="Write your observations...&#10;&#10;Who seemed nervous? What contradicts the timeline? What doesn't add up?"></textarea>
+          <button id="btn-save-note" class="btn btn-outline" style="align-self:flex-start">Save Note</button>
+        </div>
+      </div>
+      <div class="nb-panel" id="nb-timeline"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════ MODAL: ACCUSATION ════════════════ -->
+<div id="m-acc" class="overlay">
+  <div class="mbox mbox-acc">
+    <div class="m-head">
+      <span class="m-head-title">Make Your Accusation</span>
+      <button class="m-close" data-close="m-acc">✕</button>
+    </div>
+    <div class="m-body" style="padding:0">
+      <p class="acc-warn">Who killed Marcus Hale? Choose carefully — this is your final decision.</p>
+      <div class="acc-grid" id="acc-grid"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════ MODAL: INSTALL ═══════════════════ -->
+<div id="m-install" class="overlay">
+  <div class="mbox mbox-install">
+    <div class="m-head">
+      <span class="m-head-title">Install Verdict</span>
+      <button class="m-close" data-close="m-install">✕</button>
+    </div>
+    <div class="inst-body">
+      <p class="inst-intro">Install Verdict as an app — play offline, full-screen, no browser bars.</p>
+
+      <!-- Already installed -->
+      <div class="inst-platform" id="inst-installed">
+        <div class="inst-already">
+          <div class="inst-already-icon">✓</div>
+          <div class="inst-already-text">Already installed</div>
+        </div>
+      </div>
+
+      <!-- Android / Chrome -->
+      <div class="inst-platform" id="inst-android">
+        <div class="inst-platform-header">
+          <span class="inst-icon">🤖</span>
+          <div>
+            <div class="inst-platform-title">Android — Chrome</div>
+            <div class="inst-platform-sub">Direct install, no app store needed</div>
+          </div>
+        </div>
+        <button class="inst-btn" id="btn-android-install" disabled>⬇ Install App</button>
+        <p class="inst-note">Tap the button above. Chrome will prompt you to install.</p>
+      </div>
+
+      <!-- iOS / Safari -->
+      <div class="inst-platform" id="inst-ios">
+        <div class="inst-platform-header">
+          <span class="inst-icon">🍎</span>
+          <div>
+            <div class="inst-platform-title">iPhone / iPad — Safari</div>
+            <div class="inst-platform-sub">Add to Home Screen</div>
+          </div>
+        </div>
+        <div class="ios-steps">
+          <div class="ios-step">
+            <div class="ios-step-num">1</div>
+            <div class="ios-step-body">
+              <strong>Open in Safari</strong>
+              <span>Make sure you're using Safari, not Chrome or Firefox</span>
+            </div>
+          </div>
+          <div class="ios-step">
+            <div class="ios-step-num">2</div>
+            <div class="ios-step-body">
+              <strong>Tap the Share button</strong>
+              <span>The <kbd>⬆</kbd> icon at the bottom of the screen</span>
+            </div>
+          </div>
+          <div class="ios-step">
+            <div class="ios-step-num">3</div>
+            <div class="ios-step-body">
+              <strong>Tap "Add to Home Screen"</strong>
+              <span>Scroll down in the share sheet to find the <kbd>+</kbd> option</span>
+            </div>
+          </div>
+          <div class="ios-step">
+            <div class="ios-step-num">4</div>
+            <div class="ios-step-body">
+              <strong>Tap "Add"</strong>
+              <span>Verdict will appear on your home screen instantly</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Desktop -->
+      <div class="inst-platform" id="inst-desktop">
+        <div class="inst-platform-header">
+          <span class="inst-icon">🖥</span>
+          <div>
+            <div class="inst-platform-title">Desktop — Chrome / Edge</div>
+            <div class="inst-platform-sub">Install as a native-like app</div>
+          </div>
+        </div>
+        <button class="inst-btn" id="btn-desktop-install" disabled>⬇ Install App</button>
+        <p class="inst-note">Or click the install icon in your browser's address bar.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+/* ═══════════════════════════════════════════════════════
+   DATA
+═══════════════════════════════════════════════════════ */
+const PERSONS=[
+  {id:'lena',  name:'Lena Brooks', role:'Waitress / Night Manager', rel:'Employee — former romantic partner of victim', mood:'talk'},
+  {id:'phil',  name:'Phil Davis',  role:'Short-Order Cook',         rel:'Employee — victim owed him $5,000',           mood:'talk'},
+  {id:'evan',  name:'Evan Stone',  role:'Business Rival',           rel:'Competitor — argued with victim that evening',mood:'serious'},
+  {id:'finch', name:'Arthur Finch',role:'Delivery Driver',          rel:'Supplier — last confirmed to see victim',     mood:'old'},
+];
+const CHARS={
+  lena: {name:'Lena Brooks', def:'talk'},
+  phil: {name:'Phil Davis',  def:'talk'},
+  evan: {name:'Evan Stone',  def:'serious'},
+  finch:{name:'Arthur Finch',def:'old'},
+};
+const KILLER='lena';
+const CORRECT_TEXT='Correct. Lena Brooks killed Marcus in his back office. The flour traces on the paperweight handle matched dry storage stock — placing her in the office, not the kitchen. She knew the security code and disabled the cameras herself. Her alibi was constructed after the fact.';
+const WRONG_TEXT="That's not the killer. Keep investigating. Consider who had access to the security system and who had unfinished business with Marcus that night.";
+const TIMELINE=[
+  {t:'11:00 PM',e:'Diner closes to the public'},
+  {t:'11:30 PM',e:'Evan Stone seen arguing with Marcus'},
+  {t:'12:00 AM',e:'Arthur Finch makes delivery — meets privately with Marcus'},
+  {t:'12:30 AM',e:'Lena Brooks arrives for the night shift'},
+  {t:'1:00 AM', e:'Phil Davis arrives for the night shift'},
+  {t:'1:30 AM', e:'Phil and Marcus argue — Phil storms out'},
+  {t:'1:40 AM', e:'Security camera system goes offline (manually disabled)'},
+  {t:'2:00 AM', e:'Estimated time of death'},
+  {t:'2:30 AM', e:'Body discovered by cleaning crew'},
+];
+
+/*
+  DIALOGUE FORMAT:
+  Each key is an array of lines.
+  Line fields:
+    sp  — speaker id
+    md  — mood image suffix
+    tx  — text to display (omit for choice-only or redirect lines)
+    ev  — evidence string to collect
+    ch  — array of choices: [{tx, nx}] — shown after this line
+    ret — key to return to after branch completes (default: suspect_start)
+
+  After a branch, the engine returns to the CHOICE LINE of _start,
+  NOT replaying the intro lines. This is the key fix.
+*/
+const DLG={
+  /* ── LENA ─────────────────────────────────────────── */
+  lena_start:[
+    {sp:'lena',md:'concerned_talk',tx:"I've been over this twice already. I was in the kitchen the whole time. I didn't hear anything."},
+    {sp:'lena',md:'talk',          tx:"Marcus was difficult. But I didn't kill him. Whatever you think you know about us — that's history."},
+    {sp:'lena',md:'suspicious',    tx:"If you want a real lead, look at Phil. He made a threat that night. I heard every word.",
+     ch:[
+       {tx:"Where exactly were you between 1:40 and 2:30 AM?",  nx:'lena_alibi'},
+       {tx:"Tell me about your history with Marcus.",            nx:'lena_history'},
+       {tx:"What did Phil threaten, exactly?",                   nx:'lena_phil'},
+       {tx:"Who had access to the security system?",             nx:'lena_security'},
+       {tx:"What did Finch and Marcus discuss?",                 nx:'lena_finch'},
+     ]
+    }
+  ],
+  lena_alibi:[
+    {sp:'lena',md:'tired',         tx:"Dry storage — back of the kitchen, past the prep area. We had a flour and sugar shipment that needed organizing."},
+    {sp:'lena',md:'talk',          tx:"The door was closed for temperature control. I couldn't hear anything from the office."},
+    {sp:'lena',md:'concerned_talk',tx:"I know how 'I was alone' sounds. But the flour bags were moved — that's evidence I was there.",
+     ev:"Lena claims she organized flour stock in dry storage during the estimated time of death"},
+  ],
+  lena_history:[
+    {sp:'lena',md:'sad',   tx:"We dated for six months. About a year ago. He was going through his divorce and taking it out on everyone."},
+    {sp:'lena',md:'anger', tx:"He owed me three months of back wages. Said the diner was running thin. But he still drove that car."},
+    {sp:'lena',md:'tired', tx:"I stayed because I needed the job. Not for any other reason.",
+     ev:"Marcus owed Lena unpaid wages — she had direct financial motive"},
+  ],
+  lena_phil:[
+    {sp:'lena',md:'fear',    tx:"Phil was shouting. Something about five thousand dollars from a poker game two weeks ago."},
+    {sp:'lena',md:'shocked', tx:"He said — word for word — 'You'll regret this, Marcus. I'm not walking out empty-handed again.' Then the door slammed."},
+    {sp:'lena',md:'suspicious',tx:"Phil left at 1:30. But he knew the building. He could have come back through the loading bay.",
+     ev:"Phil threatened Marcus at 1:30 AM over a $5,000 gambling debt — Lena witnessed it"},
+  ],
+  lena_security:[
+    {sp:'lena',md:'talk',          tx:"Three people had the code. Marcus, Phil, and me. Marcus set it up a few years ago."},
+    {sp:'lena',md:'suspicious',    tx:"The system going offline at 1:40 — right after Phil left — that isn't a coincidence."},
+    {sp:'lena',md:'concerned_talk',tx:"Yes, I had the code. But I was in the kitchen. Why would I disable the cameras if I had nothing to hide?",
+     ev:"Only Marcus, Phil, and Lena knew the security system code"},
+  ],
+  lena_finch:[
+    {sp:'lena',md:'tired',         tx:"Finch came in around midnight. Normal delivery. He comes every night."},
+    {sp:'lena',md:'concerned_talk',tx:"But he and Marcus went into the office together. That was unusual — deliveries happen at the loading door."},
+    {sp:'lena',md:'suspicious',    tx:"When Finch left, he looked rattled. I asked if he was okay. He just said 'don't ask' and walked out.",
+     ev:"Finch met privately with Marcus in his office and appeared shaken when leaving"},
+  ],
+
+  /* ── PHIL ─────────────────────────────────────────── */
+  phil_start:[
+    {sp:'phil',md:'unbothered', tx:"You again. Or another one of you. I already gave my statement. Twice."},
+    {sp:'phil',md:'teeth_smile',tx:"Marcus owed half the city money. Your suspect list is a long one."},
+    {sp:'phil',md:'talk',       tx:"But I left at 1:30 and went straight to the Blue Moon bar. Ask Tommy Reese.",
+     ch:[
+       {tx:"Can anyone confirm you were at the Blue Moon?",     nx:'phil_alibi'},
+       {tx:"Tell me about the money Marcus owed you.",           nx:'phil_money'},
+       {tx:"Describe the argument you had with Marcus.",         nx:'phil_argument'},
+       {tx:"What do you know about the security system?",        nx:'phil_security'},
+       {tx:"What was Lena's state of mind that night?",          nx:'phil_lena'},
+     ]
+    }
+  ],
+  phil_alibi:[
+    {sp:'phil',md:'unbothered',  tx:"Tommy Reese. He's been bartending the Blue Moon five years. I was on the second stool from the left until 3 AM closing."},
+    {sp:'phil',md:'teeth_smile', tx:"I ran a tab. Credit card. First charge hit at 1:42 AM. You want the receipt number?"},
+    {sp:'phil',md:'talk',        tx:"I knew I'd be the first person you'd look at. So I made sure I was somewhere visible.",
+     ev:"Phil has a credit card receipt at 1:42 AM and a bartender alibi at the Blue Moon"},
+  ],
+  phil_money:[
+    {sp:'phil',md:'anger',     tx:"Five grand from a poker game two weeks back. He lost fair and square. Said he'd pay by the weekend."},
+    {sp:'phil',md:'rage_talk', tx:"Then the next weekend. Nothing. I showed up to work every day and watched him act like nothing happened."},
+    {sp:'phil',md:'suspicious',tx:"He had cash in that safe. I've seen it. He just chose not to pay me.",
+     ev:"Marcus kept a cash safe in his office — Phil knew about it and was owed $5,000"},
+  ],
+  phil_argument:[
+    {sp:'phil',md:'unbothered',  tx:"We argued. Yeah. I'm not going to pretend I was polite."},
+    {sp:'phil',md:'teeth_smile', tx:"I said: tonight, my money, or I walk and take the morning prep crew with me. He laughed."},
+    {sp:'phil',md:'anger',       tx:"So I picked up my jacket and left. I wasn't going to stand there and take that.",
+     ev:"Phil admits arguing with Marcus and threatening to quit — left at 1:30 AM"},
+  ],
+  phil_security:[
+    {sp:'phil',md:'suspicious',tx:"The cameras were always acting up. Old system. But going fully offline all at once — that's not a malfunction."},
+    {sp:'phil',md:'talk',      tx:"Someone who knew what they were doing shut it down. I had the code. So did Lena. But I was at the bar."},
+    {sp:'phil',md:'unbothered',tx:"Do the math.",
+     ev:"Phil confirms the security shutdown was deliberate and points to those who knew the code"},
+  ],
+  phil_lena:[
+    {sp:'phil',md:'laugh',     tx:"She was in the kitchen when I left. Too quiet, actually. Normally she's got something to say."},
+    {sp:'phil',md:'suspicious',tx:"I heard her and Marcus earlier — hushed voices, controlled. The kind of argument people have when they don't want witnesses."},
+    {sp:'phil',md:'talk',      tx:"She says she was organizing stock. I've never seen Lena stay past her shift to organize anything.",
+     ev:"Phil heard Lena and Marcus arguing quietly before his own confrontation with Marcus"},
+  ],
+
+  /* ── EVAN ─────────────────────────────────────────── */
+  evan_start:[
+    {sp:'evan',md:'serious',   tx:"I'll save you time. Yes, I argued with Marcus. We argued regularly. That's what competitors do."},
+    {sp:'evan',md:'driven',    tx:"I was gone before midnight. My building has key-card entry — the log will show 11:47. My lawyer can verify the rest."},
+    {sp:'evan',md:'unbothered',tx:"I didn't like Marcus. But I solve problems in court, not with paperweights.",
+     ch:[
+       {tx:"What were you arguing about at 11:30 PM?",        nx:'evan_argument'},
+       {tx:"Describe your business dispute with Marcus.",      nx:'evan_rivalry'},
+       {tx:"Where did you go after leaving the diner?",        nx:'evan_alibi'},
+       {tx:"What do you know about Marcus's finances?",        nx:'evan_finances'},
+       {tx:"What's your read on the diner staff?",             nx:'evan_staff'},
+     ]
+    }
+  ],
+  evan_argument:[
+    {sp:'evan',md:'anger',   tx:"He poached my sous chef. Offered her a salary while she was freelancing for me. Didn't say a word about it."},
+    {sp:'evan',md:'serious', tx:"I went down there to confront him directly. He said the market was competitive and I should adapt."},
+    {sp:'evan',md:'driven',  tx:"I told him I'd see him in civil court. Then I left. No threats, no escalation.",
+     ev:"Evan threatened Marcus with a civil lawsuit over staff poaching — left at 11:45 PM"},
+  ],
+  evan_rivalry:[
+    {sp:'evan',md:'serious',   tx:"We've been on the same block for six years. He opened two years after me and undercut every price I had."},
+    {sp:'evan',md:'driven',    tx:"He ran at a loss for a year. I suspect outside cash that he couldn't account for properly."},
+    {sp:'evan',md:'unbothered',tx:"I was building a predatory pricing case. I needed Marcus in court — not dead.",
+     ev:"Evan had an active civil lawsuit against Marcus and claims he needed him alive"},
+  ],
+  evan_alibi:[
+    {sp:'evan',md:'serious',   tx:"Drove home. My building's key-card log shows I arrived at 11:47 PM."},
+    {sp:'evan',md:'driven',    tx:"I was on the phone with my lawyer until 1 AM. We were drafting the civil filing."},
+    {sp:'evan',md:'unbothered',tx:"Every minute of my evening is accounted for.",
+     ev:"Evan has a building key-card log at 11:47 PM and a lawyer phone call until 1 AM"},
+  ],
+  evan_finances:[
+    {sp:'evan',md:'serious',tx:"Marcus was behind on everything. His suppliers talk. Flour company, Fresh Foods — all flagged."},
+    {sp:'evan',md:'driven', tx:"Word was he kept off-book cash somewhere in the building. Cash he couldn't put through the register."},
+    {sp:'evan',md:'shocked',tx:"If someone knew about that cash and was desperate enough — that's the motive right there.",
+     ev:"Marcus was financially desperate and reportedly kept off-book cash on the premises"},
+  ],
+  evan_staff:[
+    {sp:'evan',md:'serious',   tx:"The cook — Phil — I've seen him at the bar down the street. Hot-headed. Not the type to plan something carefully."},
+    {sp:'evan',md:'driven',    tx:"The waitress — Lena — I knew her before Marcus. Sharp woman. Deliberate. Nothing she does is accidental."},
+    {sp:'evan',md:'unbothered',tx:"If someone in that building could make this decision and stay composed afterward — it'd be Lena.",
+     ev:"Evan describes Lena as calculated and deliberate — capable of a planned act"},
+  ],
+
+  /* ── FINCH ────────────────────────────────────────── */
+  finch_start:[
+    {sp:'finch',md:'old',      tx:"Eleven years delivering to this diner. Never any trouble. Not once."},
+    {sp:'finch',md:'serious',  tx:"I did my delivery, I spoke with Marcus, I left. Whatever happened after midnight — I wasn't there."},
+    {sp:'finch',md:'unbothered',tx:"I keep my head down and do my job.",
+     ch:[
+       {tx:"What did you and Marcus discuss privately?",       nx:'finch_private'},
+       {tx:"Why did you look shaken when you left?",           nx:'finch_shaken'},
+       {tx:"Did Marcus say anything unusual that night?",      nx:'finch_unusual'},
+       {tx:"Did you see anything suspicious near the diner?",  nx:'finch_saw'},
+       {tx:"Can your company logs confirm your movements?",    nx:'finch_logs'},
+     ]
+    }
+  ],
+  finch_private:[
+    {sp:'finch',md:'concerned_talk',tx:"He asked me to delay his invoice again. Said he'd have the money next week."},
+    {sp:'finch',md:'serious',       tx:"I told him I couldn't cover for him. The account was already flagged at the company."},
+    {sp:'finch',md:'unbothered',    tx:"He didn't take it well. Got very quiet. The kind of quiet where someone's doing arithmetic in their head.",
+     ev:"Finch told Marcus his account was flagged — Marcus was financially cornered on the night of his death"},
+  ],
+  finch_shaken:[
+    {sp:'finch',md:'concerned_talk',tx:"Shaken. That's fair. Marcus said something before I left that I didn't expect."},
+    {sp:'finch',md:'serious',       tx:"He said: 'If I don't get ahead of this tonight, it's a different conversation tomorrow.'"},
+    {sp:'finch',md:'old',           tx:"I think he knew someone was coming back. He was expecting trouble.",
+     ev:"Marcus told Finch he expected a confrontation that night — he anticipated danger"},
+  ],
+  finch_unusual:[
+    {sp:'finch',md:'serious',       tx:"He was going through papers. Receipts, invoices. Looking for something specific."},
+    {sp:'finch',md:'concerned_talk',tx:"He asked if I'd ever deposited cash off-book before. I said no. He dropped it fast."},
+    {sp:'finch',md:'old',           tx:"A man who asks that question has cash he needs to move quickly. Or debts he can't put on paper.",
+     ev:"Marcus asked Finch about off-book cash on the night of his death"},
+  ],
+  finch_saw:[
+    {sp:'finch',md:'serious',       tx:"When I pulled out of the loading bay, there was a car parked dark on the side street. Engine off, lights off."},
+    {sp:'finch',md:'concerned_talk',tx:"Dark green sedan. I've seen it in that lot before. Couldn't make out who was inside."},
+    {sp:'finch',md:'unbothered',    tx:"Could've been nothing. But a car sitting dark at midnight in an empty street — that stays with you.",
+     ev:"Finch spotted a dark green sedan parked near the diner around midnight with engine and lights off"},
+  ],
+  finch_logs:[
+    {sp:'finch',md:'old',      tx:"Twenty-two years with Fresh Foods. Clean record. Never shorted an account, never missed a stop."},
+    {sp:'finch',md:'satisfied',tx:"Silver Spoon was one of six stops that night. I have timestamped digital logs for all of them."},
+    {sp:'finch',md:'serious',  tx:"I'll have them to you by morning.",
+     ev:"Finch has documented timestamped delivery logs for his entire route that night"},
+  ],
+};
+
+/* ═══════════════════════════════════════════════════════
+   GAME STATE
+═══════════════════════════════════════════════════════ */
+const GS={
+  suspect:null,
+  dlgKey:null,
+  dlgIdx:0,
+  typing:false,
+  timer:null,
+  TS:22,
+  evidence:[],
+  notes:[],
+  interviewed:new Set(),
+  asked:new Set(), // tracks which branch keys have been visited
+};
+
+/* ═══════════════════════════════════════════════════════
+   UTILITY
+═══════════════════════════════════════════════════════ */
+const $=id=>document.getElementById(id);
+const SCREENS=['s-menu','s-brief','s-select','s-game','s-verdict'];
+
+function show(id){
+  SCREENS.forEach(s=>{$(s).classList.toggle('hidden',s!==id)});
+  GS.phase=id;
+}
+function openM(id){
+  document.querySelectorAll('.overlay').forEach(o=>o.classList.remove('open'));
+  $(id).classList.add('open');
+}
+function closeM(){document.querySelectorAll('.overlay').forEach(o=>o.classList.remove('open'))}
+function toast(msg,d=2400){const t=$('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),d)}
+
+/* ═══════════════════════════════════════════════════════
+   SUSPECT GRID
+═══════════════════════════════════════════════════════ */
+function buildGrid(){
+  const g=$('suspect-grid');g.innerHTML='';
+  PERSONS.forEach(p=>{
+    const done=GS.interviewed.has(p.id);
+    const d=document.createElement('div');
+    d.className='sc'+(done?' done':'');
+    d.innerHTML=`<div class="sc-img"><img src="images/characters/${p.id}_${p.mood}.png" alt="${p.name}" onerror="this.style.opacity='0.1'"/></div>
+      <div class="sc-body">
+        <div class="sc-name">${p.name}</div>
+        <div class="sc-role">${p.role}</div>
+        <div class="sc-rel">${p.rel}</div>
+        <span class="sc-tag ${done?'t-done':'t-new'}">${done?'✓ Interviewed':'Interrogate →'}</span>
+      </div>`;
+    d.onclick=()=>startInterrogation(p.id);
+    g.appendChild(d);
+  });
+  $('sel-status').textContent=`${GS.interviewed.size} / 4 interviewed · ${GS.evidence.length} clues`;
+  $('hud-clues').textContent=GS.evidence.length;
+  $('hud-done').textContent=GS.interviewed.size+'/4';
+  const ab=$('btn-sel-accuse');
+  ab.style.display=GS.interviewed.size>=2?'inline-flex':'none';
+}
+
+/* ═══════════════════════════════════════════════════════
+   INTERROGATION ENGINE — FIXED
+═══════════════════════════════════════════════════════ */
+function startInterrogation(id){
+  GS.suspect=id;
+  GS.asked=new Set(); // reset per session — fresh each time you visit a suspect
+  const c=CHARS[id],p=PERSONS.find(x=>x.id===id);
+  $('hud-name').textContent=c.name;
+  $('hud-role').textContent=p.role;
+  $('p-name').textContent=c.name;
+  $('p-role').textContent=p.role;
+  show('s-game');
+  // Always start at the LAST line of _start (the choice line)
+  // so we skip the intro lines on re-entry
+  runStart(true);
+}
+
+// runStart: goes to the choice line of suspect_start
+// firstVisit=true means play from line 0 (intro); false means jump to choice line
+function runStart(firstVisit){
+  const key=GS.suspect+'_start';
+  const lines=DLG[key];
+  if(!lines)return;
+  if(firstVisit){
+    GS.dlgKey=key;GS.dlgIdx=0;
+    runLine();
+  } else {
+    // Jump directly to the choice line (last line in _start array)
+    const choiceLineIdx=lines.findIndex(l=>l.ch);
+    GS.dlgKey=key;
+    GS.dlgIdx=choiceLineIdx>=0?choiceLineIdx:lines.length-1;
+    renderChoiceLine();
+  }
+}
+
+function runLine(){
+  const lines=DLG[GS.dlgKey];
+  if(!lines||GS.dlgIdx>=lines.length){returnToStart();return}
+  const line=lines[GS.dlgIdx];
+  // Collect evidence
+  if(line.ev&&!GS.evidence.includes(line.ev)){
+    GS.evidence.push(line.ev);
+    $('hud-clues').textContent=GS.evidence.length;
+    showEvFlash();toast('◆ New clue recorded');
+  }
+  // Update portrait
+  if(line.sp&&line.md)setPortrait(line.sp,line.md);
+  if(line.sp)$('dlg-spk').textContent=CHARS[line.sp].name;
+  if(line.md)$('dlg-mood').textContent=line.md.replace(/_/g,' ');
+
+  // Line has no text — shouldn't happen with current data but safe guard
+  if(!line.tx){returnToStart();return}
+
+  // Hide choices while typing
+  $('choices').classList.add('off');
+  $('dlg-hint').classList.remove('on');
+
+  // If this line also has choices, show them AFTER typing
+  typeText(line.tx, ()=>{
+    if(line.ch){
+      GS.dlgIdx=lines.indexOf(line); // stay on this line
+      GS.choices=line.ch;
+      renderChoices();
+    } else {
+      // Show continue hint
+      $('dlg-hint').classList.add('on');
+    }
+  });
+}
+
+// Render choices without re-typing anything
+function renderChoiceLine(){
+  const lines=DLG[GS.dlgKey];
+  const line=lines?.[GS.dlgIdx];
+  if(!line)return;
+  if(line.sp&&line.md)setPortrait(line.sp,line.md);
+  if(line.sp)$('dlg-spk').textContent=CHARS[line.sp].name;
+  if(line.md)$('dlg-mood').textContent=line.md.replace(/_/g,' ');
+  if(line.tx){$('dlg-text').textContent=line.tx}
+  $('dlg-caret').classList.add('off');
+  $('dlg-hint').classList.remove('on');
+  if(line.ch){GS.choices=line.ch;renderChoices();}
+}
+
+function renderChoices(){
+  const panel=$('choices');
+  panel.innerHTML='';
+  $('dlg-hint').classList.remove('on');
+  GS.choices.forEach(ch=>{
+    const btn=document.createElement('button');
+    const done=GS.asked.has(ch.nx);
+    btn.className='ch-btn'+(done?' asked':'');
+    btn.textContent=ch.tx;
+    btn.disabled=done;
+    if(!done){
+      btn.onclick=()=>{
+        GS.asked.add(ch.nx);
+        panel.classList.add('off');
+        // Run the branch
+        GS.dlgKey=ch.nx;GS.dlgIdx=0;
+        runLine();
+      };
+    }
+    panel.appendChild(btn);
+  });
+  // End interrogation button
+  const end=document.createElement('button');
+  end.className='ch-btn ch-end';
+  end.textContent='↩ End interrogation — return to suspect list';
+  end.onclick=()=>{
+    GS.interviewed.add(GS.suspect);
+    buildGrid();show('s-select');
+  };
+  panel.appendChild(end);
+  panel.classList.remove('off');
+}
+
+// After a branch finishes, return to the CHOICE LINE of _start
+function returnToStart(){
+  runStart(false); // skip intro, go straight to choices
+}
+
+function advanceLine(){
+  if(GS.typing){skipTyping();return}
+  // If choices are showing, don't advance
+  if(!$('choices').classList.contains('off'))return;
+  const lines=DLG[GS.dlgKey];
+  if(!lines)return;
+  GS.dlgIdx++;
+  if(GS.dlgIdx<lines.length){
+    runLine();
+  } else {
+    returnToStart();
+  }
+}
+
+/* ═══════════════════════════════════════════════════════
+   TYPING ENGINE
+═══════════════════════════════════════════════════════ */
+function typeText(text, onDone){
+  clearTimeout(GS.timer);
+  GS.typing=true;
+  const el=$('dlg-text'),ca=$('dlg-caret');
+  el.textContent='';ca.classList.remove('off');
+  $('dlg-hint').classList.remove('on');
+  let i=0;
+  const tick=()=>{
+    if(i<text.length){el.textContent+=text[i++];GS.timer=setTimeout(tick,GS.TS)}
+    else{GS.typing=false;ca.classList.add('off');if(onDone)onDone();}
+  };
+  tick();
+}
+function skipTyping(){
+  clearTimeout(GS.timer);GS.typing=false;
+  // Get the text of the current line
+  const line=DLG[GS.dlgKey]?.[GS.dlgIdx];
+  if(line?.tx)$('dlg-text').textContent=line.tx;
+  $('dlg-caret').classList.add('off');
+  // Trigger the onDone logic manually
+  if(line?.ch){GS.choices=line.ch;renderChoices();}
+  else{$('dlg-hint').classList.add('on');}
+}
+
+function setPortrait(id,mood){
+  const img=$('portrait');
+  const path=`images/characters/${id}_${mood}.png`;
+  const t=new Image();
+  t.onload=()=>{img.style.opacity='0';setTimeout(()=>{img.src=path;img.style.opacity='1'},120)};
+  t.onerror=()=>{img.src=`images/characters/${id}_${CHARS[id].def}.png`;img.style.opacity='1'};
+  t.src=path;
+}
+function showEvFlash(){const e=$('ev-flash');e.classList.add('on');setTimeout(()=>e.classList.remove('on'),2800)}
+
+/* ═══════════════════════════════════════════════════════
+   MODALS
+═══════════════════════════════════════════════════════ */
+function buildCF(){
+  // Suspects
+  const sc=$('cf-sus');sc.innerHTML='';
+  PERSONS.forEach(p=>{
+    const done=GS.interviewed.has(p.id);
+    const d=document.createElement('div');d.className='cf-sus-item';
+    d.innerHTML=`<span class="cf-sus-name">${p.name}</span><span class="cf-sus-role">${p.role}</span>${done?'<span class="cf-sus-done">✓ Interviewed</span>':''}`;
+    sc.appendChild(d);
+  });
+  // Clues
+  const cc=$('cf-clues');cc.innerHTML='';$('cf-clue-n').textContent=GS.evidence.length;
+  if(!GS.evidence.length){cc.innerHTML='<p class="empty-st">No clues yet — interrogate suspects.</p>'}
+  else GS.evidence.forEach(e=>{
+    const d=document.createElement('div');d.className='clue-item';
+    d.innerHTML=`<span class="clue-dot">◆</span><span>${e}</span>`;cc.appendChild(d);
+  });
+  // Timeline
+  const tl=$('cf-tl');tl.innerHTML='';
+  TIMELINE.forEach(item=>{
+    const li=document.createElement('li');li.className='tl-item';
+    li.innerHTML=`<span class="tl-time">${item.t}</span><span class="tl-ev">${item.e}</span>`;
+    tl.appendChild(li);
+  });
+}
+
+function buildNB(){
+  // Evidence
+  const ne=$('nb-evidence');ne.innerHTML='';
+  if(!GS.evidence.length)ne.innerHTML='<p class="empty-st">No evidence collected yet.</p>';
+  else GS.evidence.forEach(e=>{
+    const d=document.createElement('div');d.className='nb-ev-item';
+    d.innerHTML=`<span class="clue-dot">◆</span><span>${e}</span>`;ne.appendChild(d);
+  });
+  // Notes
+  const nl=$('nb-notes-list');nl.innerHTML='';
+  GS.notes.slice().reverse().forEach(n=>{
+    const d=document.createElement('div');d.className='nb-note';
+    d.innerHTML=`<div class="nb-note-time">${n.time}</div><div class="nb-note-body">${n.text}</div>`;
+    nl.appendChild(d);
+  });
+  // Timeline
+  const tl=$('nb-timeline');tl.innerHTML='';
+  TIMELINE.forEach(item=>{
+    const li=document.createElement('li');li.className='tl-item';
+    li.innerHTML=`<span class="tl-time">${item.t}</span><span class="tl-ev">${item.e}</span>`;
+    tl.appendChild(li);
+  });
+  $('nb-ec').textContent=GS.evidence.length;
+  $('nb-nc').textContent=GS.notes.length;
+  switchNbTab('evidence');
+}
+
+function switchNbTab(tab){
+  document.querySelectorAll('.nb-tab').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));
+  ['evidence','notes','timeline'].forEach(t=>$('nb-'+t).classList.toggle('active',t===tab));
+}
+
+function buildAccuse(){
+  const g=$('acc-grid');g.innerHTML='';
+  PERSONS.forEach(p=>{
+    const d=document.createElement('div');d.className='acc-card';
+    d.innerHTML=`<img src="images/characters/${p.id}_${p.mood}.png" alt="${p.name}" onerror="this.style.display='none'"/>
+      <div class="acc-name">${p.name}</div>
+      <div class="acc-role">${p.role}</div>
+      <button class="acc-btn" data-id="${p.id}">Accuse</button>`;
+    g.appendChild(d);
+  });
+  g.querySelectorAll('.acc-btn').forEach(btn=>btn.onclick=()=>makeAccusation(btn.dataset.id));
+}
+
+function makeAccusation(id){
+  closeM();
+  const correct=id===KILLER,c=CHARS[id];
+  const h=$('v-head');
+  h.textContent=correct?'✓ Correct.':'✗ Wrong Accusation.';
+  h.className='v-head '+(correct?'v-correct':'v-wrong');
+  $('v-suspect').textContent=c.name;
+  $('v-exp').textContent=correct?CORRECT_TEXT:WRONG_TEXT;
+  $('v-i').textContent=GS.interviewed.size;
+  $('v-c').textContent=GS.evidence.length;
+  $('v-n').textContent=GS.notes.length;
+  const retry=$('v-retry'),back=$('btn-v-back');
+  retry.style.display=correct?'none':'block';
+  back.style.display=correct?'none':'inline-flex';
+  show('s-verdict');
+}
+
+/* ═══════════════════════════════════════════════════════
+   PWA INSTALL
+═══════════════════════════════════════════════════════ */
+let _installPrompt=null;
+
+function detectPlatform(){
+  const ua=navigator.userAgent;
+  const isIOS=/iPad|iPhone|iPod/.test(ua)&&!window.MSStream;
+  const isAndroid=/Android/.test(ua);
+  const isInstalled=window.matchMedia('(display-mode: standalone)').matches||navigator.standalone;
+
+  // Hide all
+  ['inst-installed','inst-android','inst-ios','inst-desktop'].forEach(id=>$(id).style.display='none');
+
+  if(isInstalled){
+    $('inst-installed').style.display='block';
+  } else if(isIOS){
+    $('inst-ios').style.display='block';
+  } else if(isAndroid){
+    $('inst-android').style.display='block';
+  } else {
+    $('inst-desktop').style.display='block';
+  }
+}
+
+function initInstall(){
+  detectPlatform();
+  window.addEventListener('beforeinstallprompt',e=>{
+    e.preventDefault();_installPrompt=e;
+    [$('btn-android-install'),$('btn-desktop-install')].forEach(btn=>{
+      if(btn){
+        btn.disabled=false;
+        btn.onclick=async()=>{
+          if(!_installPrompt)return;
+          _installPrompt.prompt();
+          const{outcome}=await _installPrompt.userChoice;
+          if(outcome==='accepted'){_installPrompt=null;btn.textContent='✓ Installing…';btn.disabled=true;}
+        };
+      }
+    });
+  });
+  if('serviceWorker'in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
+}
+
+/* ═══════════════════════════════════════════════════════
+   EVENT WIRING
+═══════════════════════════════════════════════════════ */
+// Menu
+$('btn-start').onclick=()=>show('s-brief');
+$('btn-install-open').onclick=()=>{detectPlatform();openM('m-install')};
+// Briefing
+$('btn-brief-back').onclick=()=>show('s-menu');
+$('btn-brief-go').onclick=()=>{buildGrid();show('s-select')};
+// Select
+$('btn-sel-cf').onclick=()=>{buildCF();openM('m-cf')};
+$('btn-sel-menu').onclick=()=>show('s-menu');
+$('btn-sel-accuse').onclick=()=>{buildAccuse();openM('m-acc')};
+// HUD
+$('hud-cf').onclick=()=>{buildCF();openM('m-cf')};
+$('hud-nb').onclick=()=>{buildNB();openM('m-nb')};
+$('hud-sw').onclick=()=>{GS.interviewed.add(GS.suspect);buildGrid();show('s-select')};
+// Verdict
+$('btn-v-back').onclick=()=>{buildGrid();show('s-select')};
+$('btn-v-menu').onclick=()=>{GS.evidence=[];GS.notes=[];GS.interviewed=new Set();GS.asked=new Set();GS.suspect=null;show('s-menu')};
+// Modal closes
+document.querySelectorAll('.m-close[data-close]').forEach(btn=>btn.onclick=closeM);
+document.querySelectorAll('.overlay').forEach(o=>o.onclick=e=>{if(e.target===o)closeM()});
+// Notebook tabs
+document.querySelectorAll('.nb-tab').forEach(btn=>btn.onclick=()=>switchNbTab(btn.dataset.tab));
+// Save note
+$('btn-save-note').onclick=()=>{
+  const txt=$('note-ta').value.trim();if(!txt)return;
+  GS.notes.push({time:new Date().toLocaleTimeString(),text:txt});
+  $('note-ta').value='';buildNB();toast('Note saved.');
+};
+// Dialogue click advance
+$('dlg-body').onclick=e=>{if(e.target.closest('.ch-btn'))return;advanceLine()};
+// Keyboard
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape'){closeM();return}
+  const anyOpen=document.querySelector('.overlay.open');
+  if(anyOpen)return;
+  if(e.key==='c'||e.key==='C'){buildCF();openM('m-cf');return}
+  if(e.key==='n'||e.key==='N'){buildNB();openM('m-nb');return}
+  if((e.key===' '||e.key==='Enter')&&GS.phase==='s-game'){e.preventDefault();advanceLine()}
+});
+
+initInstall();
+</script>
+</body>
+</html>
