@@ -105,15 +105,15 @@ kbd{background:var(--ink3);border:1px solid var(--border);border-radius:3px;padd
 .sel-bar{flex-shrink:0;display:flex;align-items:center;justify-content:space-between;padding:12px 24px;background:rgba(0,0,0,.4);border-bottom:1px solid var(--border)}
 .sel-title{font-family:'Playfair Display',serif;font-size:1.1rem;font-style:italic;color:var(--paper)}
 .sel-status{font-family:'Share Tech Mono',monospace;font-size:.62rem;color:var(--gold);letter-spacing:.1em;opacity:.7}
-.suspect-grid{flex:1;display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:rgba(200,146,42,.06);min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch}
-.sc{background:var(--ink2);cursor:pointer;display:flex;flex-direction:column;transition:background .18s;position:relative;overflow:hidden}
+.suspect-grid{flex:1;display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:rgba(200,146,42,.06);overflow-y:auto;-webkit-overflow-scrolling:touch;align-content:start}
+.sc{background:var(--ink2);cursor:pointer;display:flex;flex-direction:column;transition:background .18s;position:relative}
 .sc:hover{background:rgba(200,146,42,.05)}
-.sc.done{opacity:.72}
-.sc-img{width:100%;position:relative;overflow:hidden;background:#060402;flex-shrink:0}
-.sc-img img{width:100%;display:block;aspect-ratio:2/3;object-fit:cover;object-position:top center;transition:transform .3s}
+.sc.done{opacity:.75}
+.sc-img{width:100%;position:relative;overflow:hidden;background:#060402;flex-shrink:0;height:200px}
+.sc-img img{width:100%;height:100%;display:block;object-fit:cover;object-position:top center;transition:transform .3s}
 .sc:hover .sc-img img{transform:scale(1.03)}
 .sc-img::after{content:'';position:absolute;inset:0;background:linear-gradient(to top,rgba(10,9,6,.75) 0%,transparent 55%);pointer-events:none}
-.sc-body{padding:12px 14px;flex:1;display:flex;flex-direction:column;gap:3px}
+.sc-body{padding:12px 14px;display:flex;flex-direction:column;gap:3px;background:var(--ink2)}
 .sc-name{font-family:'Playfair Display',serif;font-size:.95rem;color:var(--paper)}
 .sc-role{font-family:'Share Tech Mono',monospace;font-size:.58rem;color:var(--gold);letter-spacing:.1em;text-transform:uppercase}
 .sc-rel{font-size:.77rem;color:var(--text-dim);font-style:italic;line-height:1.4;margin-top:2px}
@@ -284,18 +284,35 @@ kbd{background:var(--ink3);border:1px solid var(--border);border-radius:3px;padd
   .cf-grid{grid-template-columns:1fr}
   .suspect-grid{grid-template-columns:repeat(2,1fr)}
   .acc-grid{grid-template-columns:repeat(2,1fr)}
-  .portrait-side{width:40%}
+  .portrait-side{width:38%}
 }
 @media(max-width:560px){
-  .portrait-side{display:none}
+  /* Suspect grid: 2 columns, fixed image height so body text always shows */
   .suspect-grid{grid-template-columns:1fr 1fr}
+  .sc-img{height:160px}
+  /* Interrogation: stack portrait above dialogue on mobile */
+  .interrog{flex-direction:column}
+  .portrait-side{
+    width:100%;
+    height:220px;
+    flex-shrink:0;
+  }
+  #portrait{object-position:top center}
+  .portrait-vig{
+    background:linear-gradient(to bottom,transparent 50%,rgba(10,9,6,.9) 100%),
+               linear-gradient(to top,rgba(10,9,6,.5) 0%,transparent 30%);
+  }
+  .dlg-side{flex:1;min-height:0}
+  /* HUD adjustments */
   .hud-stats{display:none}
-  .hud-btn{min-width:52px;padding:0 10px;font-size:.52rem}
-  .dlg-body{padding:13px 16px 8px}
-  .choices{padding:8px 14px 10px}
+  .hud-btn{min-width:50px;padding:0 9px;font-size:.5rem}
+  /* Other layout tweaks */
+  .dlg-body{padding:12px 14px 6px}
+  .choices{padding:8px 12px 10px;max-height:45%}
   .menu-title{font-size:4rem}
   .v-stats{gap:18px}
   .acc-grid{grid-template-columns:repeat(2,1fr)}
+  .choices-wrap{padding:0 12px 12px}
 }
 </style>
 </head>
@@ -606,7 +623,7 @@ kbd{background:var(--ink3);border:1px solid var(--border);border-radius:3px;padd
           </div>
         </div>
         <button class="inst-btn" id="btn-desktop-install" disabled>⬇ Install App</button>
-        <p class="inst-note">Or click the install icon in your browser's address bar.</p>
+        <p class="inst-note" id="desktop-install-note">If the button is greyed out, click the install icon <strong style="color:var(--gold)">⊕</strong> in your browser's address bar, or visit the page in Chrome / Edge.</p>
       </div>
     </div>
   </div>
@@ -1168,13 +1185,26 @@ function makeAccusation(id){
 ═══════════════════════════════════════════════════════ */
 let _installPrompt=null;
 
+function wireInstallBtn(btn){
+  if(!btn)return;
+  if(_installPrompt){
+    btn.disabled=false;
+    btn.textContent='⬇ Install App';
+  }
+  btn.onclick=async()=>{
+    if(!_installPrompt){return}
+    _installPrompt.prompt();
+    const{outcome}=await _installPrompt.userChoice;
+    if(outcome==='accepted'){_installPrompt=null;btn.textContent='✓ Installing…';btn.disabled=true;}
+  };
+}
+
 function detectPlatform(){
   const ua=navigator.userAgent;
   const isIOS=/iPad|iPhone|iPod/.test(ua)&&!window.MSStream;
   const isAndroid=/Android/.test(ua);
-  const isInstalled=window.matchMedia('(display-mode: standalone)').matches||navigator.standalone;
+  const isInstalled=window.matchMedia('(display-mode: standalone)').matches||!!navigator.standalone;
 
-  // Hide all
   ['inst-installed','inst-android','inst-ios','inst-desktop'].forEach(id=>$(id).style.display='none');
 
   if(isInstalled){
@@ -1183,26 +1213,20 @@ function detectPlatform(){
     $('inst-ios').style.display='block';
   } else if(isAndroid){
     $('inst-android').style.display='block';
+    wireInstallBtn($('btn-android-install'));
   } else {
     $('inst-desktop').style.display='block';
+    wireInstallBtn($('btn-desktop-install'));
   }
 }
 
 function initInstall(){
-  detectPlatform();
   window.addEventListener('beforeinstallprompt',e=>{
-    e.preventDefault();_installPrompt=e;
-    [$('btn-android-install'),$('btn-desktop-install')].forEach(btn=>{
-      if(btn){
-        btn.disabled=false;
-        btn.onclick=async()=>{
-          if(!_installPrompt)return;
-          _installPrompt.prompt();
-          const{outcome}=await _installPrompt.userChoice;
-          if(outcome==='accepted'){_installPrompt=null;btn.textContent='✓ Installing…';btn.disabled=true;}
-        };
-      }
-    });
+    e.preventDefault();
+    _installPrompt=e;
+    // If install modal is already open, enable the button immediately
+    wireInstallBtn($('btn-android-install'));
+    wireInstallBtn($('btn-desktop-install'));
   });
   if('serviceWorker'in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
 }
